@@ -1,0 +1,73 @@
+void  StartModule()            //启动模块
+  {
+   TX=1;                        //启动一次模块
+   _nop_();  _nop_(); _nop_(); _nop_(); _nop_(); 
+   _nop_(); _nop_(); _nop_(); _nop_(); _nop_(); 
+   _nop_(); _nop_(); _nop_(); _nop_(); _nop_(); 
+   _nop_(); _nop_();_nop_(); _nop_(); _nop_(); 
+   _nop_();
+   TX=0;
+  }
+
+  void Conut(void)
+{
+  time=TH0*256+TL0;
+  TH0=0;
+  TL0=0;
+ 
+  S=(time*1.7)/100;     //算出来是CM
+  if((S>=700)||flag==1) //超出测量范围显示“-”
+  {  
+    flag=0;
+    DisplayOneChar(0, 1, ASCII[11]);
+    DisplayOneChar(1, 1, ASCII[10]); //显示点
+    DisplayOneChar(2, 1, ASCII[11]);
+    DisplayOneChar(3, 1, ASCII[11]);
+    DisplayOneChar(4, 1, ASCII[12]); //显示M
+  }
+  else
+  {
+    disbuff[0]=S%1000/100;
+    disbuff[1]=S%1000%100/10;
+    disbuff[2]=S%1000%10 %10;
+    DisplayOneChar(0, 1, ASCII[disbuff[0]]);
+    DisplayOneChar(1, 1, ASCII[10]); //显示点
+    DisplayOneChar(2, 1, ASCII[disbuff[1]]);
+    DisplayOneChar(3, 1, ASCII[disbuff[2]]);
+    DisplayOneChar(4, 1, ASCII[12]); //显示M
+  }
+}
+
+void main(void)
+{
+ unsigned char TempCyc;
+ Delay400Ms(); //启动等待，等LCM讲入工作状态
+ LCMInit(); //LCM初始化
+ Delay5Ms(); //延时片刻(可不要)
+ DisplayListChar(0, 0, mcustudio);
+ DisplayListChar(0, 1, email);
+ ReadDataLCM();//测试用句无意义
+ for (TempCyc=0; TempCyc<10; TempCyc++)
+ Delay400Ms(); //延时
+ DisplayListChar(0, 1, Cls); 
+ while(1)
+ {
+   TMOD=0x01;     //设T0为方式1，GATE=1；
+   TH0=0;
+   TL0=0;          
+   ET0=1;             //允许T0中断
+   EA=1;      //开启总中断   
+  while(1)
+    {
+       StartModule();
+   // DisplayOneChar(0, 1, ASCII[0]);
+       while(!RX);  //当RX为零时等待
+      TR0=1;       //开启计数
+       while(RX);   //当RX为1计数并等待
+       TR0=0;    //关闭计数
+          Conut();   //计算
+          delayms(80);  //80MS 
+     }
+ }
+}
+
